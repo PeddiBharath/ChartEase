@@ -3,8 +3,8 @@ from streamlit_chat import message
 import pandas as pd
 from llm import chat_with_data_api, info
 
-st.title("Chat with, query and plot your own data")
-
+st.title("ChartEase")
+st.markdown("Upload your files and ask the chatbot to generate graphs, ask questions")
 max_tokens, api_key = info()
 
 uploaded_file = st.file_uploader(label="Choose file", type=["csv","xlsx","xls"])
