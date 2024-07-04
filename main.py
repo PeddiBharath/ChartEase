@@ -7,10 +7,17 @@ st.title("Chat with, query and plot your own data")
 
 max_tokens, api_key = info()
 
-uploaded_file = st.file_uploader(label="Choose file", type=["csv"])
+uploaded_file = st.file_uploader(label="Choose file", type=["csv","xlsx","xls"])
 
 if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+    if file_extension == "csv":
+        df = pd.read_csv(uploaded_file)
+    elif file_extension in ['xlsx', 'xls']:
+        df = pd.read_excel(uploaded_file)
+    else:
+        st.error("Unsupported file format")
+    
     prompt = f"""You are a python expert. You will be given questions for
         manipulating an input dataframe.
         The available columns are: {df.columns}.
