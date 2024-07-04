@@ -11,4 +11,4 @@ pre-commit
 st-pages
 plotly
 tabulate
-matplotlib.pyplot
+matplotlib
