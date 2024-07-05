@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_chat import message
 import pandas as pd
 from llm import chat_with_data_api, info
-
+from llm import extract_python_code
 st.title("ChartEase")
 st.markdown("Upload your files and ask the chatbot to generate graphs, ask questions")
 
@@ -72,7 +72,16 @@ if user_input:
 for message in st.session_state.messages:
     if message["role"] == "user":
         avatar_url = user_avatar_url
+        with st.chat_message(message["role"], avatar=avatar_url):
+            st.markdown(message["content"])
     else:
         avatar_url = assistant_avatar_url
-    with st.chat_message(message["role"], avatar=avatar_url):
-        st.markdown(message["content"])
+        with st.chat_message(message["role"], avatar=avatar_url):
+            if "import plotly" in message["content"]:
+                code = extract_python_code(message["content"])
+                code = code.replace("fig.show()", "")
+                code += """st.plotly_chart(fig, theme='streamlit', use_container_width=True)"""
+                exec(code)
+            st.markdown(message["content"])
+
+st.write(st.session_state)
