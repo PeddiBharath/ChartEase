@@ -4,7 +4,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
-
+from openai import OpenAI
 from langchain_community.chat_models import ChatOpenAI
 from langchain.agents import AgentType
 from langchain_experimental.agents import create_pandas_dataframe_agent
@@ -33,7 +33,15 @@ def info():
                 If you encounter any issues, please contact our support team for assistance."""
             )
         )
-    return max_tokens, api_key
+        assembly_apikey = st.text_input(
+            label="Enter your AssemblyAI key:",
+            type="password",
+            help =(
+                """Go to Assembly.ai and create an account. After creating ensure that you have funds
+                in your account. Copy the Api key and paste it here."""
+            )
+        )
+    return max_tokens, api_key,assembly_apikey
 
 def extract_python_code(text):
     pattern = r'```python\s(.*?)```'
@@ -69,15 +77,16 @@ def chat_with_data_api(df, api_key, model="gpt-3.5-turbo", temperature=0.0, max_
             "role": "assistant",
             "content": code_prompt
         })
-        response = openai.ChatCompletion.create(
+        
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
             model=model,
             messages=st.session_state.messages,
             temperature=temperature,
             max_tokens=max_tokens,
-            top_p=top_p,
-            api_key=api_key
+            top_p=top_p
         )
-        code = extract_python_code(response["choices"][0]["message"]["content"])
+        code = extract_python_code(response.choices[0].message.content)
         if code is None:
             st.warning(
                 "Couldn't find data to plot in the chat. "
@@ -91,7 +100,7 @@ def chat_with_data_api(df, api_key, model="gpt-3.5-turbo", temperature=0.0, max_
             code += """st.plotly_chart(fig, theme='streamlit', use_container_width=True)"""  # noqa: E501
             st.write(f"```{code}")
             exec(code)
-            return response["choices"][0]["message"]["content"]
+            return response.choices[0].message.content
     else:
         
         llm = ChatOpenAI(

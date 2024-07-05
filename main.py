@@ -5,7 +5,10 @@ from llm import chat_with_data_api, info
 
 st.title("ChartEase")
 st.markdown("Upload your files and ask the chatbot to generate graphs, ask questions")
-max_tokens, api_key = info()
+
+api_key = ""
+assembly_apikey = ""
+max_tokens, api_key,assembly_apikey = info()
 
 uploaded_file = st.file_uploader(label="Choose file", type=["csv","xlsx","xls"])
 
@@ -29,6 +32,12 @@ if uploaded_file is not None:
 else:
     df = pd.DataFrame([])
 
+col1, col2 = st.columns([8, 1])
+with col1:
+    user_input = st.chat_input("Enter your query")
+with col2:
+    mic = st.button('🎙️')
+
 # Storing the chat
 if "generated" not in st.session_state:
     st.session_state["generated"] = ["Please upload your data"]
@@ -36,18 +45,17 @@ if "generated" not in st.session_state:
 if "past" not in st.session_state:
     st.session_state["past"] = []
 
-user_input = st.chat_input("Enter your query")
 if ((len(st.session_state["past"]) > 0)
         and (user_input == st.session_state["past"][-1])):
     user_input = ""
 
 if ("messages" in st.session_state) and \
-        (len(st.session_state["messages"]) > 2 * 3):
+        (len(st.session_state["messages"]) > 6):
     # Keep only the system prompt and the last memory_window prompts/answers
     st.session_state["messages"] = (
         # the first one is always the system prompt
         [st.session_state["messages"][0]]
-        + st.session_state["messages"][-(2 * 3 - 2):]
+        + st.session_state["messages"][-(4):]
     )
 
 model_params = {
@@ -57,7 +65,12 @@ model_params = {
     "top_p": 0.5,
 }
 
+if mic and assembly_apikey == "":
+        st.warning("Enter your AssemblyAi key in the side bar", icon="⚠")
+
 if user_input:
+    if api_key == "":
+        st.warning("Enter your OpenAi key in the sidebar", icon="⚠")
     if df.empty:
         st.warning("Dataframe is empty, upload a valid file", icon="⚠")
     else:
