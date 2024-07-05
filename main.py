@@ -83,5 +83,3 @@ for message in st.session_state.messages:
                 code += """st.plotly_chart(fig, theme='streamlit', use_container_width=True)"""
                 exec(code)
             st.markdown(message["content"])
-
-st.write(st.session_state)
