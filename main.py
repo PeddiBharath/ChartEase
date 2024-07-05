@@ -32,31 +32,20 @@ if uploaded_file is not None:
 else:
     df = pd.DataFrame([])
 
+# Define your custom avatar URLs (replace with actual URLs)
+user_avatar_url = "https://api.dicebear.com/9.x/open-peeps/svg?seed=Luna"
+assistant_avatar_url = "https://api.dicebear.com/9.x/shapes/svg?seed=Jasper"
+
+
 col1, col2 = st.columns([8, 1])
 with col1:
     user_input = st.chat_input("Enter your query")
 with col2:
     mic = st.button('🎙️')
 
-# Storing the chat
-if "generated" not in st.session_state:
-    st.session_state["generated"] = ["Please upload your data"]
-
-if "past" not in st.session_state:
-    st.session_state["past"] = []
-
-if ((len(st.session_state["past"]) > 0)
-        and (user_input == st.session_state["past"][-1])):
-    user_input = ""
-
-if ("messages" in st.session_state) and \
-        (len(st.session_state["messages"]) > 6):
-    # Keep only the system prompt and the last memory_window prompts/answers
-    st.session_state["messages"] = (
-        # the first one is always the system prompt
-        [st.session_state["messages"][0]]
-        + st.session_state["messages"][-(4):]
-    )
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+    st.session_state.messages.append({"role":"assistant","content":"Please upload your data"})
 
 model_params = {
     "model": "gpt-3.5-turbo",
@@ -76,18 +65,14 @@ if user_input:
     else:
         st.session_state["messages"].append({"role": "user", "content": user_input})
         response = chat_with_data_api(df, api_key, **model_params)
-        st.session_state.past.append(user_input)
         if response is not None:
-            st.session_state.generated.append(response)
             st.session_state["messages"].append(
                 {"role": "assistant", "content": response})
 
-if st.session_state["generated"]:
-    for i in range(len(st.session_state["generated"]) - 1, -1, -1):
-        message(st.session_state["generated"][i], key=str(i))
-        if i - 1 >= 0:
-            message(
-                st.session_state["past"][i - 1],
-                is_user=True,
-                key=str(i) + "_user"
-            )
+for message in st.session_state.messages:
+    if message["role"] == "user":
+        avatar_url = user_avatar_url
+    else:
+        avatar_url = assistant_avatar_url
+    with st.chat_message(message["role"], avatar=avatar_url):
+        st.markdown(message["content"])
