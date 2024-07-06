@@ -10,38 +10,47 @@ from langchain.agents import AgentType
 from langchain_experimental.agents import create_pandas_dataframe_agent
 from langchain.schema.output_parser import OutputParserException
 
-def info():
+api_key = ""
+assembly_apikey = ""
+max_tokens = 0
+
+def sidebar():
     with st.sidebar:
-        max_tokens = st.slider(
-                label="Maximum length (tokens)",
-                value=256,
-                min_value=0,
-                max_value=4096,
-                step=1,
+            global max_tokens
+            max_tokens = st.slider(
+                    label="Maximum length (tokens)",
+                    value=256,
+                    min_value=0,
+                    max_value=4096,
+                    step=1,
+                    help=(
+                        """The maximum number of tokens to generate in the chat completion.
+                        The total length of input tokens and generated tokens is limited by
+                        the model's context length."""
+                    )
+                )
+            global api_key
+            api_key = st.text_input(
+                label="Enter your OpenAI key",
+                type="password",
                 help=(
-                    """The maximum number of tokens to generate in the chat completion.
-                    The total length of input tokens and generated tokens is limited by
-                    the model's context length."""
+                    """Obtain your key from the OpenAI website, 
+                    then paste it into the "Enter Your OpenAI Key" section on our site and click "Save" or "Submit."
+                    If you encounter any issues, please contact our support team for assistance."""
                 )
             )
-        api_key = st.text_input(
-            label="Enter your OpenAI key",
-            type="password",
-            help=(
-                """Obtain your key from the OpenAI website, 
-                then paste it into the "Enter Your OpenAI Key" section on our site and click "Save" or "Submit."
-                If you encounter any issues, please contact our support team for assistance."""
+            global assembly_apikey
+            assembly_apikey = st.text_input(
+                label="Enter your AssemblyAI key:",
+                type="password",
+                help =(
+                    """Go to Assembly.ai and create an account. After creating ensure that you have funds
+                    in your account. Copy the Api key and paste it here."""
+                )
             )
-        )
-        assembly_apikey = st.text_input(
-            label="Enter your AssemblyAI key:",
-            type="password",
-            help =(
-                """Go to Assembly.ai and create an account. After creating ensure that you have funds
-                in your account. Copy the Api key and paste it here."""
-            )
-        )
-    return max_tokens, api_key,assembly_apikey
+
+def info():
+    return max_tokens,api_key,assembly_apikey
 
 def extract_python_code(text):
     pattern = r'```python\s(.*?)```'
@@ -52,7 +61,6 @@ def extract_python_code(text):
         return matches[0]
 
 def plot_matplotlib_code(code):
-    # Redirect the output to a BytesIO object
     buf = BytesIO()
     exec(code)
     plt.savefig(buf, format="png")
@@ -81,7 +89,7 @@ def chat_with_data_api(df, api_key, model="gpt-3.5-turbo", temperature=0.0, max_
         client = OpenAI(api_key=api_key)
         response = client.chat.completions.create(
             model=model,
-            messages=st.session_state.messages,
+            messages=st.session_state.context,
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p
@@ -122,7 +130,7 @@ def chat_with_data_api(df, api_key, model="gpt-3.5-turbo", temperature=0.0, max_
         )
 
         try:
-            answer = pandas_df_agent(st.session_state.messages)
+            answer = pandas_df_agent(st.session_state.context)
             if answer["intermediate_steps"]:
                 action = answer["intermediate_steps"][-1][0].tool_input["query"]
                 st.write(f"Executed the code ```{action}```")
@@ -141,5 +149,3 @@ def chat_with_data_api(df, api_key, model="gpt-3.5-turbo", temperature=0.0, max_
         except:  # noqa: E722
             answer = "Unknown error occured in LangChain agent. Refine your query"
             return answer
-
-
